@@ -1,0 +1,66 @@
+name: Sync Slow
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sync-slow
+  cancel-in-progress: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Chrome
+        run: |
+          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+          google-chrome --version
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行爬虫
+        env:
+          OUTPUT_FILE: apple_ids.json
+        run: python scripts/fetch_slow.py
+
+      - name: 打印统计
+        run: |
+          python - <<'PYEOF'
+          import json
+          d = json.load(open("apple_ids.json"))
+          print(f"📊 账号总数: {d['total']}")
+          print(f"🕐 生成时间: {d['generated_at']}")
+          for src, cnt in d.get("source_stats", {}).items():
+              print(f"   {src}: {cnt} 条")
+          PYEOF
+
+      - name: 提交数据
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apple_ids.json
+          if git diff --cached --quiet; then
+            echo "无变化，跳过提交"
+          else
+            COUNT=$(python -c "import json; print(json.load(open('apple_ids.json'))['total'])")
+            git commit -m "data: slow ${COUNT} [$(TZ='Asia/Shanghai' date '+%m-%d %H:%M')]"
+            git push --force-with-lease origin main || git push --force origin main
+          fi
