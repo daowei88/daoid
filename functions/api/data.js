@@ -1,6 +1,6 @@
 export async function onRequest(context) {
   // 替换为你的新仓库地址
-  const GITHUB_RAW = 'https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/apple_ids.json';
+  const GITHUB_RAW = 'https://raw.githubusercontent.com/daowei88/daoid/main/apple_ids.json';
 
   try {
     const resp = await fetch(GITHUB_RAW, {
