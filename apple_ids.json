@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-04-26 06:33",
+  "generated_at": "2026-04-26 06:34",
   "total": 320,
   "source_stats": {
     "idfree.top": 5,
     "idshare001.me": 20,
-    "ios.juzixp.com": 53,
+    "ios.juzixp.com": 51,
     "applexp/美区": 1,
     "applexp/日区": 8,
     "applexp/港区": 2,
-    "applexp/小火箭": 6,
+    "applexp/小火箭": 8,
     "ccbaohe.com/appleID": 115,
     "tkbaohe.com": 23,
     "id.btvda.top": 40,
@@ -71,9 +71,9 @@
       "password": "3re#qFX3",
       "status": "正常",
       "country": "美国",
-      "checked_at": "2026-04-26 06:33:37",
+      "checked_at": "2026-04-26 06:34:39",
       "source": "idshare001.me",
-      "updated_at": "2026-04-26 06:33:37"
+      "updated_at": "2026-04-26 06:34:39"
     },
     {
       "id": "aad02980e778",
@@ -356,16 +356,6 @@
       "updated_at": "2026-04-26 06:33:29"
     },
     {
-      "id": "642955f488bb",
-      "email": "andersenproschvc2764@gmail.com",
-      "password": "FAy8cCAE8R",
-      "status": "正常",
-      "country": "",
-      "checked_at": "2026-04-26 06:21",
-      "source": "ios.juzixp.com",
-      "updated_at": "2026-04-26 06:33:29"
-    },
-    {
       "id": "9d23efde070f",
       "email": "larrysc28ilg@icloud.com",
       "password": "kePwT6E5MP",
@@ -471,16 +461,6 @@
       "password": "wmPja7rvbe",
       "status": "正常",
       "country": "美国",
-      "checked_at": "2026-04-26 06:04",
-      "source": "ios.juzixp.com",
-      "updated_at": "2026-04-26 06:33:29"
-    },
-    {
-      "id": "15c47264662b",
-      "email": "qfvblj2968@163.com",
-      "password": "1qNQ2sDUJ1",
-      "status": "正常",
-      "country": "",
       "checked_at": "2026-04-26 06:04",
       "source": "ios.juzixp.com",
       "updated_at": "2026-04-26 06:33:29"
@@ -906,6 +886,26 @@
       "updated_at": "2026-04-26 06:33:34"
     },
     {
+      "id": "15c47264662b",
+      "email": "qfvblj2968@163.com",
+      "password": "1qNQ2sDUJ1",
+      "status": "正常",
+      "country": "",
+      "checked_at": "2026-04-26 05:39:29",
+      "source": "applexp/小火箭",
+      "updated_at": "2026-04-26 06:34:37"
+    },
+    {
+      "id": "642955f488bb",
+      "email": "andersenproschvc2764@gmail.com",
+      "password": "FAy8cCAE8R",
+      "status": "正常",
+      "country": "",
+      "checked_at": "2026-04-26 05:38:42",
+      "source": "applexp/小火箭",
+      "updated_at": "2026-04-26 06:34:37"
+    },
+    {
       "id": "b5633e86835f",
       "email": "3592093847@qq.com",
       "password": "G9MtMH4Wp2",
@@ -913,7 +913,7 @@
       "country": "美国",
       "checked_at": "2025-10-15 20:34:12",
       "source": "applexp/小火箭",
-      "updated_at": "2026-04-26 06:33:36"
+      "updated_at": "2026-04-26 06:34:37"
     },
     {
       "id": "7426ed724e1e",
