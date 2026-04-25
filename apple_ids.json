@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-04-26 00:46",
+  "generated_at": "2026-04-26 00:47",
   "total": 307,
   "source_stats": {
     "idfree.top": 5,
     "idshare001.me": 19,
-    "ios.juzixp.com": 43,
+    "ios.juzixp.com": 41,
     "applexp/美区": 1,
     "applexp/日区": 8,
     "applexp/港区": 2,
-    "applexp/小火箭": 6,
+    "applexp/小火箭": 8,
     "ccbaohe.com/appleID": 114,
     "tkbaohe.com": 27,
     "id.btvda.top": 44,
@@ -71,9 +71,9 @@
       "password": "tV#0c4Yx",
       "status": "正常",
       "country": "美国",
-      "checked_at": "2026-04-26 00:46:42",
+      "checked_at": "2026-04-26 00:47:40",
       "source": "idshare001.me",
-      "updated_at": "2026-04-26 00:46:42"
+      "updated_at": "2026-04-26 00:47:40"
     },
     {
       "id": "20ab38266118",
@@ -81,9 +81,9 @@
       "password": "mxD3Zf@0",
       "status": "正常",
       "country": "美国",
-      "checked_at": "2026-04-26 00:46:42",
+      "checked_at": "2026-04-26 00:47:40",
       "source": "idshare001.me",
-      "updated_at": "2026-04-26 00:46:42"
+      "updated_at": "2026-04-26 00:47:40"
     },
     {
       "id": "9b2b4d48fd4b",
@@ -506,16 +506,6 @@
       "updated_at": "2026-04-26 00:15:35"
     },
     {
-      "id": "fb9424e57339",
-      "email": "michelleqmrwi3@gmail.com",
-      "password": "gM7H6p96py",
-      "status": "正常",
-      "country": "",
-      "checked_at": "2026-04-25 23:26",
-      "source": "ios.juzixp.com",
-      "updated_at": "2026-04-25 23:44:38"
-    },
-    {
       "id": "6f6f14347ab5",
       "email": "rowenawoodard246042b@icloud.com",
       "password": "BgW5juwnAt",
@@ -656,16 +646,6 @@
       "updated_at": "2026-04-23 05:15:40"
     },
     {
-      "id": "666cc000be12",
-      "email": "robertwang380@gmail.com",
-      "password": "fgKXq3uWA6",
-      "status": "正常",
-      "country": "",
-      "checked_at": "2026-04-23 04:49",
-      "source": "ios.juzixp.com",
-      "updated_at": "2026-04-23 05:15:40"
-    },
-    {
       "id": "a244488ddd63",
       "email": "v8417ccf@icloud.com",
       "password": "AavuSendZk2j",
@@ -796,6 +776,26 @@
       "updated_at": "2026-04-26 00:46:39"
     },
     {
+      "id": "666cc000be12",
+      "email": "robertwang380@gmail.com",
+      "password": "fgKXq3uWA6",
+      "status": "正常",
+      "country": "",
+      "checked_at": "2026-04-26 00:39:25",
+      "source": "applexp/小火箭",
+      "updated_at": "2026-04-26 00:47:38"
+    },
+    {
+      "id": "fb9424e57339",
+      "email": "michelleqmrwi3@gmail.com",
+      "password": "gM7H6p96py",
+      "status": "正常",
+      "country": "",
+      "checked_at": "2026-04-26 00:38:48",
+      "source": "applexp/小火箭",
+      "updated_at": "2026-04-26 00:47:38"
+    },
+    {
       "id": "b5633e86835f",
       "email": "3592093847@qq.com",
       "password": "G9MtMH4Wp2",
@@ -803,7 +803,7 @@
       "country": "美国",
       "checked_at": "2025-10-15 20:34:12",
       "source": "applexp/小火箭",
-      "updated_at": "2026-04-26 00:46:41"
+      "updated_at": "2026-04-26 00:47:38"
     },
     {
       "id": "7426ed724e1e",
