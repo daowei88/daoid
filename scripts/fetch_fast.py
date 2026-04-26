@@ -830,31 +830,24 @@ def crawl_applexp_shadowrocket() -> list:
 # ══════════════════════════════════════════
 
 def merge_and_save(fast_records: dict, output_path: str) -> dict:
-    # 读取现有所有数据，按邮箱建立索引
+    # 读取现有数据，只保留非 FAST_SOURCES 的数据（mid/slow 负责的站点）
     merged = {}
     if Path(output_path).exists():
         try:
             with open(output_path, "r", encoding="utf-8") as f:
                 old = json.load(f)
             for a in old.get("accounts", []):
-                merged[a["email"]] = a
+                # 只保留不属于 fast 负责的站点的数据
+                if a.get("source", "") not in FAST_SOURCES:
+                    merged[a["email"]] = a
         except Exception as ex:
             logger.warning(f"读取现有文件失败: {ex}")
 
-    # 本次抓到的数据按邮箱覆盖（旧数据全部保留，只更新/新增本次抓到的）
+    # 用本次 fast 抓到的数据完全替换（本次没抓到的 fast 站点账号自动丢弃）
     for e, rec in fast_records.items():
         merged[e] = rec
 
-    order_map = {s: i for i, s in enumerate(SITE_ORDER)}
-    accounts = sorted(
-        merged.values(),
-        key=lambda a: (order_map.get(a.get("source", ""), 999),
-                       -(len(a.get("checked_at") or "")),
-                       a.get("checked_at", "") or "")
-    )
-
-    # 每个来源内部按 checked_at 降序（最新的在前）
-    from itertools import groupby
+    # 按来源顺序，每个来源内部按 checked_at 降序（最新的在前）
     groups = {}
     for a in merged.values():
         src = a.get("source", "unknown")

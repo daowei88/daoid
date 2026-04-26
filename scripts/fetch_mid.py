@@ -555,18 +555,20 @@ SITES = [
 # ══════════════════════════════════════════
 
 def merge_and_save(mid_records: dict, output_path: str) -> dict:
-    # 读取现有所有数据，按邮箱建立索引
+    # 读取现有数据，只保留非 MID_SOURCES 的数据（fast/slow 负责的站点）
     merged = {}
     if Path(output_path).exists():
         try:
             with open(output_path, "r", encoding="utf-8") as f:
                 old = json.load(f)
             for a in old.get("accounts", []):
-                merged[a["email"]] = a
+                # 只保留不属于 mid 负责的站点的数据
+                if a.get("source", "") not in MID_SOURCES:
+                    merged[a["email"]] = a
         except Exception as ex:
             logger.warning(f"读取现有文件失败: {ex}")
 
-    # 本次抓到的数据按邮箱覆盖（旧数据全部保留，只更新/新增本次抓到的）
+    # 用本次 mid 抓到的数据完全替换（本次没抓到的 mid 站点账号自动丢弃）
     for e, rec in mid_records.items():
         merged[e] = rec
 
