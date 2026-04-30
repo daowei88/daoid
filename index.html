@@ -493,8 +493,7 @@ function init(data){
     'ios.juzixp.com',
     'applexp/美区','applexp/日区','applexp/港区','applexp/小火箭',
     'ccbaohe.com/appleID','tkbaohe.com',
-    'id.btvda.top','id.bocchi2b.top',
-    'fx.xdd.net.tr'
+    'id.btvda.top','id.bocchi2b.top'
   ];
 
   // 全部账号统一按 checked_at 降序（原站点更新时间，最新的排第一）
@@ -512,13 +511,21 @@ function init(data){
   }
   document.getElementById('footer').innerHTML='各类海外账号应有尽有，TG：<a href="https://t.me/daowei8" target="_blank" style="color:var(--blue);font-weight:600;text-decoration:none">daowei8</a>';
 
-  // 构建国家选项（按出现频率排序）
+  // 构建国家选项：小火箭置顶，其余按频率排序
   const cntMap={};
   for(const a of all){ const c=a.country||'美国'; cntMap[c]=(cntMap[c]||0)+1; }
-  const countries=Object.entries(cntMap).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
   const sel=document.getElementById('countrySelect');
-  // 保留第一个 option（全部），其余重建
   while(sel.options.length>1) sel.remove(1);
+  // 小火箭单独置顶
+  if(cntMap['小火箭']){
+    const opt=document.createElement('option');
+    opt.value='小火箭';
+    opt.textContent='🚀 小火箭 ('+cntMap['小火箭']+')';
+    sel.appendChild(opt);
+  }
+  const countries=Object.entries(cntMap)
+    .filter(e=>e[0]!=='小火箭')
+    .sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
   for(const c of countries){
     const opt=document.createElement('option');
     opt.value=c; opt.textContent='🌏 '+c+' ('+cntMap[c]+')';
@@ -575,7 +582,8 @@ function render(){
     const statusBadge=a.status
       ?`<span class="badge ${isLocked?'badge-lock':'badge-ok'}">${isLocked?'🔒':'✅'} ${esc(a.status)}</span>`:'';
     const country=a.country||'美国';
-    const countryBadge=`<span class="badge badge-country">🌏 ${esc(country)}</span>`;
+    const isRocket=country==='小火箭';
+    const countryBadge=`<span class="badge badge-country">${isRocket?'🚀':'🌏'} ${esc(country)}</span>`;
     return `<div class="id-card">
   <div class="ct">
     <span class="cn">#${idx+1}</span>
