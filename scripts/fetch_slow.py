@@ -73,7 +73,6 @@ SITE_ORDER = [
     "applexp/美区", "applexp/日区", "applexp/港区", "applexp/小火箭",
     "ccbaohe.com/appleID", "tkbaohe.com",
     "id.btvda.top", "id.bocchi2b.top",
-    "fx.xdd.net.tr",
 ]
 
 
@@ -302,9 +301,20 @@ def parse_vue_accounts(raw_list: list, site_name="", time_is_utc=False) -> list:
         except Exception:
             pass
         raw_status = item.get("status", 1)
-        status_ok = (raw_status == 1) if isinstance(raw_status, int) else not bad(str(raw_status))
+        if isinstance(raw_status, int):
+            status_ok = (raw_status == 1)
+        else:
+            status_ok = not bad(str(raw_status))
+        # check 字段 0=正常（btvda 特有）
+        if "check" in item:
+            chk = item["check"]
+            if isinstance(chk, int) and chk != 0:
+                continue
         raw_country = str(item.get("country") or item.get("region") or item.get("area") or "")
         country = find_country(raw_country) or "美国"
+        # bocchi2b 的 country 字段可能直接包含"小火箭"描述
+        if "小火箭" in raw_country or "shadowrocket" in raw_country.lower():
+            country = "小火箭"
         if not email or "@" not in email or not pw:
             continue
         if not is_valid_email(email) or not status_ok:
@@ -540,20 +550,18 @@ SITES = [
 # ══════════════════════════════════════════
 
 def merge_and_save(slow_records: dict, output_path: str) -> dict:
-    # 读取现有数据，只保留非 SLOW_SOURCES 的数据（fast/mid 负责的站点）
+    # 只保留非 SLOW_SOURCES 的旧数据，slow 站点数据完全用本次结果替换
     merged = {}
     if Path(output_path).exists():
         try:
             with open(output_path, "r", encoding="utf-8") as f:
                 old = json.load(f)
             for a in old.get("accounts", []):
-                # 只保留不属于 slow 负责的站点的数据
                 if a.get("source", "") not in SLOW_SOURCES:
                     merged[a["email"]] = a
         except Exception as ex:
             logger.warning(f"读取现有文件失败: {ex}")
 
-    # 用本次 slow 抓到的数据完全替换（本次没抓到的 slow 站点账号自动丢弃）
     for e, rec in slow_records.items():
         merged[e] = rec
 
