@@ -60,7 +60,7 @@ COUNTRY_RE = re.compile(
 
 STATUS_BAD = {"异常", "不可用", "失效", "已失效", "locked", "invalid"}
 
-MID_SOURCES = {"idfree.top", "fx.xdd.net.tr"}
+MID_SOURCES = {"idfree.top"}
 
 SITE_ORDER = [
     "idfree.top", "idshare001.me",
@@ -68,7 +68,6 @@ SITE_ORDER = [
     "applexp/美区", "applexp/日区", "applexp/港区", "applexp/小火箭",
     "ccbaohe.com/appleID", "tkbaohe.com",
     "id.btvda.top", "id.bocchi2b.top",
-    "fx.xdd.net.tr",
 ]
 
 
@@ -545,8 +544,7 @@ def crawl_xdd_net_tr(driver) -> list:
 # ══════════════════════════════════════════
 
 SITES = [
-    {"name": "idfree.top",    "fn": crawl_idfree_top},
-    {"name": "fx.xdd.net.tr", "fn": crawl_xdd_net_tr},
+    {"name": "idfree.top", "fn": crawl_idfree_top},
 ]
 
 
@@ -555,20 +553,18 @@ SITES = [
 # ══════════════════════════════════════════
 
 def merge_and_save(mid_records: dict, output_path: str) -> dict:
-    # 读取现有数据，只保留非 MID_SOURCES 的数据（fast/slow 负责的站点）
+    # 只保留非 MID_SOURCES 的旧数据，mid 站点数据完全用本次结果替换
     merged = {}
     if Path(output_path).exists():
         try:
             with open(output_path, "r", encoding="utf-8") as f:
                 old = json.load(f)
             for a in old.get("accounts", []):
-                # 只保留不属于 mid 负责的站点的数据
                 if a.get("source", "") not in MID_SOURCES:
                     merged[a["email"]] = a
         except Exception as ex:
             logger.warning(f"读取现有文件失败: {ex}")
 
-    # 用本次 mid 抓到的数据完全替换（本次没抓到的 mid 站点账号自动丢弃）
     for e, rec in mid_records.items():
         merged[e] = rec
 
