@@ -303,9 +303,12 @@ def parse_vue_accounts(raw_list: list, site_name="") -> list:
         return results
     first = raw_list[0]
     logger.info(f"  {site_name} 样本字段: {list(first.keys()) if isinstance(first, dict) else type(first)}")
+    if isinstance(first, dict):
+        logger.info(f"  {site_name} 第一条: {dict(list(first.items())[:4])}")
     for item in raw_list:
         if not isinstance(item, dict):
             continue
+        # username 字段在 idshare001 里就是邮箱
         email = str(item.get("email") or item.get("username") or
                     item.get("account") or item.get("user") or "").strip().lower()
         pw = str(item.get("password") or item.get("pwd") or
@@ -316,7 +319,16 @@ def parse_vue_accounts(raw_list: list, site_name="") -> list:
         except Exception:
             pass
         raw_status = item.get("status", 1)
-        status_ok = (raw_status == 1) if isinstance(raw_status, int) else not bad(str(raw_status))
+        # 兼容数字(1=正常)和字符串状态
+        if isinstance(raw_status, int):
+            status_ok = (raw_status == 1)
+        else:
+            status_ok = not bad(str(raw_status))
+        # check 字段 0=正常（idshare001 特有）
+        if "check" in item:
+            chk = item["check"]
+            if isinstance(chk, int) and chk != 0:
+                continue
         raw_country = str(item.get("country") or item.get("region") or item.get("area") or "")
         country = find_country(raw_country) or "美国"
         if not email or "@" not in email or not pw:
@@ -780,6 +792,7 @@ def crawl_applexp_shadowrocket() -> list:
     if data is not None:
         api_results = _parse_applexp_api_response(data, "applexp/小火箭-API")
         for r in api_results:
+            r["country"] = "小火箭"   # 强制标记为小火箭分类
             e = r["email"]
             if e not in seen_emails:
                 seen_emails.add(e)
@@ -815,7 +828,7 @@ def crawl_applexp_shadowrocket() -> list:
                 "email": email, "password": pw,
                 "status": "正常",
                 "checked_at": record.get("checked_at", now_cst()),
-                "country": record.get("country", "美国"),
+                "country": "小火箭",
             })
             logger.info(f"  applexp/小火箭 {n}.txt → {email}")
         except Exception as ex:
@@ -830,24 +843,21 @@ def crawl_applexp_shadowrocket() -> list:
 # ══════════════════════════════════════════
 
 def merge_and_save(fast_records: dict, output_path: str) -> dict:
-    # 读取现有数据，只保留非 FAST_SOURCES 的数据（mid/slow 负责的站点）
+    # 只保留非 FAST_SOURCES 的旧数据，fast 站点数据完全用本次结果替换
     merged = {}
     if Path(output_path).exists():
         try:
             with open(output_path, "r", encoding="utf-8") as f:
                 old = json.load(f)
             for a in old.get("accounts", []):
-                # 只保留不属于 fast 负责的站点的数据
                 if a.get("source", "") not in FAST_SOURCES:
                     merged[a["email"]] = a
         except Exception as ex:
             logger.warning(f"读取现有文件失败: {ex}")
 
-    # 用本次 fast 抓到的数据完全替换（本次没抓到的 fast 站点账号自动丢弃）
     for e, rec in fast_records.items():
         merged[e] = rec
 
-    # 按来源顺序，每个来源内部按 checked_at 降序（最新的在前）
     groups = {}
     for a in merged.values():
         src = a.get("source", "unknown")
