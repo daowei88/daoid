@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-12 00:49",
-  "total": 85,
+  "generated_at": "2026-05-12 00:51",
+  "total": 86,
   "source_stats": {
-    "idfree.top": 1,
+    "idfree.top": 2,
     "ios.juzixp.com": 19,
     "applexp/美区": 1,
     "applexp/日区": 8,
@@ -14,14 +14,24 @@
   },
   "accounts": [
     {
+      "id": "c42b8dea6c17",
+      "email": "caichuij544063@163.com",
+      "password": "ET722aKHv8",
+      "status": "正常",
+      "country": "",
+      "checked_at": "2026-05-12 00:51:35",
+      "source": "idfree.top",
+      "updated_at": "2026-05-12 00:51:35"
+    },
+    {
       "id": "13a1e7120733",
       "email": "ji62515877@163.com",
       "password": "e1dAt5nRHN",
       "status": "正常",
       "country": "",
-      "checked_at": "2026-05-12 00:49:11",
+      "checked_at": "2026-05-12 00:51:35",
       "source": "idfree.top",
-      "updated_at": "2026-05-12 00:49:11"
+      "updated_at": "2026-05-12 00:51:35"
     },
     {
       "id": "ef7ff97ee905",
