@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-13 18:29",
-  "total": 66,
+  "generated_at": "2026-07-13 18:31",
+  "total": 67,
   "source_stats": {
-    "idfree.top": 1,
+    "idfree.top": 2,
     "applexp/美区": 17,
     "applexp/日区": 8,
     "applexp/港区": 4,
@@ -12,14 +12,24 @@
   },
   "accounts": [
     {
-      "id": "617a5a66253b",
-      "email": "chuobi83382411@163.com",
-      "password": "hPwZhhK7fs",
+      "id": "6c09d40b1981",
+      "email": "xiqun5555555@163.com",
+      "password": "kQAwwzYQ47",
       "status": "正常",
       "country": "",
-      "checked_at": "2026-07-13 18:07:13",
+      "checked_at": "2026-07-13 18:31:48",
       "source": "idfree.top",
-      "updated_at": "2026-07-13 18:07:13"
+      "updated_at": "2026-07-13 18:31:48"
+    },
+    {
+      "id": "6ce11256b5ea",
+      "email": "qiexie5216099@163.com",
+      "password": "tu2ekUwKcd",
+      "status": "正常",
+      "country": "",
+      "checked_at": "2026-07-13 18:31:48",
+      "source": "idfree.top",
+      "updated_at": "2026-07-13 18:31:48"
     },
     {
       "id": "25f42e857d9f",
