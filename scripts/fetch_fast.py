@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 """
 Apple ID 极速爬虫 (GitHub Actions 终极防丢版)
-负责最纯粹的静态站、博客和直链 txt。
+专职负责纯静态直链，秒级执行。
 """
 
 import re, json, hashlib, logging, os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import requests
-from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 CST = timezone(timedelta(hours=8))
 
-# 高匿伪装请求头
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
 }
 
-FAST_SOURCES = {"applexp/美区", "applexp/日区", "applexp/港区", "applexp/小火箭", "free.iosapp.icu", "ermao.net"}
+FAST_SOURCES = {"free.iosapp.icu"}
 
 def is_valid_email(email: str) -> bool: return "@" in str(email) and len(str(email).split("@")[0]) >= 2
 def uid(email): return hashlib.md5(email.lower().encode()).hexdigest()[:12]
@@ -49,27 +47,6 @@ def crawl_iosapp() -> list:
     logger.info(f"  free.iosapp.icu 提取到: {len(results)} 条")
     return results
 
-def crawl_generic_text(url: str, site_name: str, default_country="美国") -> list:
-    """终极文本透视：通杀所有博客排版"""
-    html = fetch_html(url)
-    text = BeautifulSoup(html, "lxml").get_text(" ", strip=True) if html else ""
-    results, seen = [], set()
-    
-    for match in re.finditer(r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', text):
-        email = match.group(1).lower()
-        if not is_valid_email(email) or email in seen: continue
-        
-        after_text = text[match.end():match.end()+150]
-        pw = ""
-        pw_match = re.search(r'(?:密码|Pass|Pw|Pwd)[:：\s]*([A-Za-z0-9!@#$%^&*()_+\-=\[\]{}]{6,32})', after_text, re.I)
-        if pw_match: pw = pw_match.group(1)
-        
-        if pw:
-            results.append({"email": email, "password": pw, "status": "正常", "checked_at": now_cst(), "country": default_country})
-            seen.add(email)
-    logger.info(f"  {site_name} 提取到: {len(results)} 条")
-    return results
-
 def merge_and_save(fast_records: dict, source_stats: dict, output_path: str):
     merged = {}
     if Path(output_path).exists():
@@ -77,9 +54,8 @@ def merge_and_save(fast_records: dict, source_stats: dict, output_path: str):
             with open(output_path, "r", encoding="utf-8") as f: old_data = json.load(f)
             for a in old_data.get("accounts", []):
                 src = a.get("source", "")
-                # 防丢失机制：如果被墙导致抓取为0，强行保留旧数据
                 if src in FAST_SOURCES and source_stats.get(src, 0) == 0:
-                    merged[a["email"]] = a
+                    merged[a["email"]] = a # 防丢机制
                 elif src not in FAST_SOURCES:
                     merged[a["email"]] = a
         except Exception: pass
@@ -91,14 +67,7 @@ def merge_and_save(fast_records: dict, source_stats: dict, output_path: str):
 
 def crawl_fast():
     records, source_stats = {}, {s: 0 for s in FAST_SOURCES}
-    tasks = [
-        ("free.iosapp.icu", crawl_iosapp),
-        ("ermao.net", lambda: crawl_generic_text("https://www.ermao.net/blog/freeappleid/", "ermao.net", "混合区")),
-        ("applexp/美区", lambda: crawl_generic_text("https://docs.applexp.com/free-accounts/appleid-us", "applexp/美区", "美国")),
-        ("applexp/日区", lambda: crawl_generic_text("https://docs.applexp.com/free-accounts/appleid-jp", "applexp/日区", "日本")),
-        ("applexp/港区", lambda: crawl_generic_text("https://docs.applexp.com/free-accounts/appleid-hk", "applexp/港区", "香港")),
-        ("applexp/小火箭", lambda: crawl_generic_text("https://docs.applexp.com/free-accounts/Shadowrocket", "applexp/小火箭", "小火箭")),
-    ]
+    tasks = [("free.iosapp.icu", crawl_iosapp)]
     for src, fn in tasks:
         try:
             pairs = fn()
