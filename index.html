@@ -458,7 +458,7 @@ footer{text-align:center;padding:20px;font-size:12px;color:var(--t3)}
 <footer id="footer"></footer>
 
 <script>
-const DATA_URL  = '/api/data';
+const DATA_URL  = 'apple_ids.json';
 const STORE_URL = 'https://apps.apple.com/us/app/shadowrocket/id932747118?l=zh-Hans-CN';
 const PAGE_SIZE = 24;
 let all=[],filtered=[],page=1,pvs={},tipTimers={};
@@ -554,7 +554,7 @@ async function loadData(){
   document.getElementById('grid').innerHTML='<div class="empty"><div class="spin"></div>正在加载…</div>';
   document.getElementById('pager').innerHTML='';
   try{
-    const r=await fetch(DATA_URL,{cache:'no-store'});
+    const r=await fetch(DATA_URL + '?t=' + new Date().getTime(), {cache:'no-store'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     init(await r.json());
   }catch(e){
