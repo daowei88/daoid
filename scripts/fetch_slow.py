@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Apple ID 慢速爬虫 (GitHub Actions 终极防丢版)
-包含: tkbaohe.com (Cloudflare 解密), id.btvda.top (深层滚动 API 拦截)
+Apple ID 慢速爬虫 (GitHub Actions 终极版)
 """
 
 import re, json, time, hashlib, logging, os
@@ -73,7 +72,6 @@ def crawl_tkbaohe(driver) -> list:
     logger.info(f"  tkbaohe 提取到: {len(results)} 条")
     return results
 
-# 深度 API 网络拦截网
 INTERCEPT_JS = r"""
 window.__api_responses = [];
 const _origFetch = window.fetch;
@@ -87,14 +85,12 @@ window.fetch = function() {
 """
 
 def scroll_to_bottom_deep(driver):
-    """深层触底：触发懒加载的隐藏 API 数据包"""
     last_height = driver.execute_script("return document.body.scrollHeight")
     for _ in range(8): 
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(2) 
         new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
+        if new_height == last_height: break
         last_height = new_height
 
 def crawl_btvda(driver) -> list:
@@ -102,9 +98,7 @@ def crawl_btvda(driver) -> list:
         resp = requests.get("https://appleapi.omofunz.com/api/data", headers=HEADERS, timeout=10)
         if resp.status_code == 200 and isinstance(resp.json(), list):
             results = [{"email": i.get("username", "").lower(), "password": i.get("password", ""), "status": "正常", "checked_at": now_cst(), "country": "美国"} for i in resp.json() if i.get("status") == 1]
-            if results:
-                logger.info(f"  btvda API提取到: {len(results)} 条")
-                return results
+            if results: return results
     except Exception: pass
 
     try:
@@ -112,7 +106,6 @@ def crawl_btvda(driver) -> list:
         driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": INTERCEPT_JS})
         driver.get("https://id.btvda.top/")
         time.sleep(6)
-        
         scroll_to_bottom_deep(driver)
         
         raw_list = driver.execute_script("return window.__api_responses || []")
@@ -141,7 +134,7 @@ def merge_and_save(slow_records: dict, source_stats: dict, output_path: str):
             for a in old.get("accounts", []):
                 src = a.get("source", "")
                 if src in SLOW_SOURCES and source_stats.get(src, 0) == 0:
-                    merged[a["email"]] = a # 防丢机制
+                    merged[a["email"]] = a
                 elif src not in SLOW_SOURCES:
                     merged[a["email"]] = a
         except Exception: pass
