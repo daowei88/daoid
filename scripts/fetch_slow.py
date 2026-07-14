@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Apple ID 慢速爬虫 (GitHub Actions 终极防丢版)
-包含: tkbaohe.com (Cloudflare 解密), id.btvda.top (API拦截)
+包含: tkbaohe.com (Cloudflare 解密), id.btvda.top (深层滚动 API 拦截)
 """
 
 import re, json, time, hashlib, logging, os
@@ -38,7 +38,6 @@ def make_driver():
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"})
     return driver
 
-# 保留原版：破解 Cloudflare 邮箱保护的 16 进制混淆
 def decode_cfemail(encoded: str) -> str:
     try:
         enc = bytes.fromhex(encoded)
@@ -67,14 +66,14 @@ def strategy_tkbaohe(html: str) -> list:
 
 def crawl_tkbaohe(driver) -> list:
     driver.get("https://tkbaohe.com/Shadowrocket/")
-    time.sleep(8) # 强等5秒盾
+    time.sleep(8) 
     driver.execute_script("window.scrollBy(0,1000);")
     time.sleep(2)
     results = strategy_tkbaohe(driver.page_source)
     logger.info(f"  tkbaohe 提取到: {len(results)} 条")
     return results
 
-# 保留原版：深度 API 网络拦截网
+# 深度 API 网络拦截网
 INTERCEPT_JS = r"""
 window.__api_responses = [];
 const _origFetch = window.fetch;
@@ -87,8 +86,18 @@ window.fetch = function() {
 };
 """
 
+def scroll_to_bottom_deep(driver):
+    """深层触底：触发懒加载的隐藏 API 数据包"""
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    for _ in range(8): 
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2) 
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        last_height = new_height
+
 def crawl_btvda(driver) -> list:
-    # 尝试直连 API
     try:
         resp = requests.get("https://appleapi.omofunz.com/api/data", headers=HEADERS, timeout=10)
         if resp.status_code == 200 and isinstance(resp.json(), list):
@@ -98,19 +107,28 @@ def crawl_btvda(driver) -> list:
                 return results
     except Exception: pass
 
-    # Selenium 兜底拦截
     try:
         driver.get("about:blank")
         driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": INTERCEPT_JS})
         driver.get("https://id.btvda.top/")
         time.sleep(6)
         
+        scroll_to_bottom_deep(driver)
+        
         raw_list = driver.execute_script("return window.__api_responses || []")
+        results_map = {}
         for data in raw_list:
             if isinstance(data, list) and len(data)>0 and "username" in data[0]:
-                results = [{"email": i.get("username", "").lower(), "password": i.get("password", ""), "status": "正常", "checked_at": now_cst(), "country": "美国"} for i in data if i.get("status") == 1]
-                logger.info(f"  btvda Selenium 拦截提取到: {len(results)} 条")
-                return results
+                for i in data:
+                    if i.get("status") == 1:
+                        e = i.get("username", "").lower()
+                        p = i.get("password", "")
+                        if e and p:
+                            results_map[e] = {"email": e, "password": p, "status": "正常", "checked_at": now_cst(), "country": "美国"}
+                            
+        results = list(results_map.values())
+        logger.info(f"  btvda Selenium 拦截提取到: {len(results)} 条")
+        return results
     except Exception as e:
         logger.error(f"  btvda 拦截失败: {e}")
     return []
@@ -122,9 +140,8 @@ def merge_and_save(slow_records: dict, source_stats: dict, output_path: str):
             with open(output_path, "r", encoding="utf-8") as f: old = json.load(f)
             for a in old.get("accounts", []):
                 src = a.get("source", "")
-                # 防丢失机制
                 if src in SLOW_SOURCES and source_stats.get(src, 0) == 0:
-                    merged[a["email"]] = a 
+                    merged[a["email"]] = a # 防丢机制
                 elif src not in SLOW_SOURCES:
                     merged[a["email"]] = a
         except Exception: pass
