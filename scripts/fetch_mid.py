@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Apple ID 中速爬虫 (GitHub Actions 终极强拆版)
-接管所有结构变动频繁、带有 5 秒盾或动态 JS 的站点。
+接管所有带有 5 秒盾、动态 JS、懒加载的刺头网站。
 """
 
 import re, json, time, hashlib, logging, os
@@ -18,16 +18,19 @@ from selenium.webdriver.support import expected_conditions as EC
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 CST = timezone(timedelta(hours=8))
-
 COUNTRY_RE = re.compile(r"(美国|英国|日本|香港|台湾|韩国|澳大利亚|新加坡|加拿大|小火箭)")
 
-# 目标接管列表
 TARGET_SITES = [
     ("idfree.top", "https://idfree.top/", "美国"),
     ("svip.xxxy.info", "https://svip.xxxy.info/", "美国"),
     ("fanqiangnan.com", "https://fanqiangnan.com/appleid.html", "美国"),
     ("laosjid.com", "https://laosjid.com/", "混合区"),
     ("id.jincaii.com", "https://id.jincaii.com/", "美国"),
+    ("ermao.net", "https://www.ermao.net/blog/freeappleid/", "混合区"),
+    ("applexp/美区", "https://docs.applexp.com/free-accounts/appleid-us", "美国"),
+    ("applexp/日区", "https://docs.applexp.com/free-accounts/appleid-jp", "日本"),
+    ("applexp/港区", "https://docs.applexp.com/free-accounts/appleid-hk", "香港"),
+    ("applexp/小火箭", "https://docs.applexp.com/free-accounts/Shadowrocket", "小火箭"),
 ]
 
 MID_SOURCES = {name for name, _, _ in TARGET_SITES}
@@ -55,7 +58,7 @@ def make_driver():
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"})
     return driver
 
-# 保留你最初最硬核的剪贴板劫持代码
+# 剪贴板劫持黑科技 (一字不删保留)
 HOOK_JS = r"""
 window.__copied = window.__copied || [];
 try {
@@ -67,22 +70,31 @@ document.addEventListener('copy', function(e){
 }, true);
 """
 
+def scroll_to_bottom_deep(driver):
+    """深层触底引擎：专治 svip 等懒加载，解决只能抓一部分的问题"""
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    for _ in range(8): 
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(1.5) 
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break 
+        last_height = new_height
+
 def close_popups(driver):
-    """盲点：无视 DOM 结构，强制点击所有看着像弹窗确认的按钮"""
-    for sel in ["//button[contains(.,'知道')]", "//button[contains(.,'同意')]", "//button[contains(.,'关闭')]", "//button[contains(.,'继续查看')]", "//button[contains(.,'我已阅读')]", "//*[@aria-label='Close']"]:
+    for sel in ["//button[contains(.,'知道')]", "//button[contains(.,'同意')]", "//button[contains(.,'关闭')]", "//*[@aria-label='Close']"]:
         try:
             btn = WebDriverWait(driver, 1.5).until(EC.element_to_be_clickable((By.XPATH, sel)))
             driver.execute_script("arguments[0].click();", btn)
             time.sleep(0.5)
         except Exception: pass
 
-def strategy_data_clipboard(html: str) -> list:
-    """四维提取引擎：涵盖 data-clipboard, copyXXX 函数解析"""
+def universal_extract(html: str, default_country: str) -> list:
     soup = BeautifulSoup(html, "lxml")
     results, seen = [], set()
 
-    # 放宽匹配条件，只要是个块就行
-    for card in soup.select(".card-body, .card, .account-card, .col-md-6, .item, div[class*='account']"):
+    # 1. 扫描所有卡片结构
+    for card in soup.select(".card-body, .card, .account-card, .col-md-6, .item, div[class*='account'], tr, li"):
         email, pw = "", ""
         for b in card.select("[data-clipboard-text], [data-copy], button"):
             v = (b.get("data-clipboard-text") or b.get("data-copy") or "").strip().lower()
@@ -101,39 +113,76 @@ def strategy_data_clipboard(html: str) -> list:
             if v and "@" not in v and 4 <= len(v) <= 64 and v != email: pw = v; break
                 
         if not pw: continue
-        country = find_country(card.get_text(" ", strip=True)[:300]) or "混合区"
+        country = find_country(card.get_text(" ", strip=True)[:300]) or default_country
         seen.add(email)
         results.append({"email": email, "password": pw, "status": "正常", "checked_at": now_cst(), "country": country})
+
+    # 2. 源码强扣 (专治 JS onclick)
+    if not results:
+        matches = re.findall(r"copy(?:Text|ToClipboard|Account|Password)?\(['\"&quot;&#39;]+([^'\"&quot;&#39;]+)['\"&quot;&#39;]+\)", html)
+        em_arr, pw_arr = [], []
+        for m in matches:
+            if "@" in m and "." in m: em_arr.append(m.lower())
+            elif len(m) >= 4: pw_arr.append(m)
+        for i in range(min(len(em_arr), len(pw_arr))):
+            e, p = em_arr[i], pw_arr[i]
+            if e not in seen:
+                seen.add(e)
+                results.append({"email": e, "password": p, "status": "正常", "checked_at": now_cst(), "country": default_country})
+
+    # 3. 文本透视引擎 (专治博客和无特征文档)
+    if not results:
+        text = soup.get_text(" ", strip=True)
+        for match in re.finditer(r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', text):
+            e = match.group(1).lower()
+            if e in seen: continue
+            after = text[match.end():match.end()+150]
+            pw_match = re.search(r'(?:密码|Pass|Pw|Pwd)[:：\s]*([A-Za-z0-9!@#$%^&*()_+\-=\[\]{}]{5,32})', after, re.I)
+            if pw_match:
+                p = pw_match.group(1).strip()
+                seen.add(e)
+                results.append({"email": e, "password": p, "status": "正常", "checked_at": now_cst(), "country": default_country})
+
     return results
 
-def crawl_universal(driver, url, site_name, default_country):
-    driver.get(url)
-    time.sleep(6) # 强制等渲染
-    driver.execute_script("window.scrollBy(0,800);")
+def crawl_idfree_top(driver) -> list:
+    """专为 idfree.top 保留的复杂交互提取"""
+    driver.get("https://idfree.top/")
+    time.sleep(5)
+    for xpath in ["//button[contains(.,'我已阅读')]", "//button[contains(.,'继续查看')]"]:
+        try:
+            btn = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, xpath)))
+            driver.execute_script("arguments[0].click();", btn)
+            time.sleep(2)
+        except Exception: pass
+        
     close_popups(driver)
-    time.sleep(1)
-
-    results = strategy_data_clipboard(driver.page_source)
+    scroll_to_bottom_deep(driver)
+    results = universal_extract(driver.page_source, "美国")
     
-    # 终极 HOOK 兜底计划 (针对完全不按套路出牌的站)
+    # 终极Hook兜底
     if not results:
         driver.execute_script(HOOK_JS)
         time.sleep(0.5)
-        # 强行把所有名字叫复制的按钮点一遍
-        for btn in driver.find_elements(By.XPATH, "//button[contains(.,'复制')] | //a[contains(.,'复制')]")[:50]:
+        for btn in driver.find_elements(By.XPATH, "//button[contains(.,'复制')]")[:50]:
             try:
-                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
                 driver.execute_script("arguments[0].click();", btn)
                 time.sleep(0.15)
             except Exception: pass
-            
         copied = driver.execute_script("return window.__copied||[]")
-        es = [c.lower() for c in copied if "@" in c and "." in c]
-        ps = [c for c in copied if "@" not in c and len(c)>=4]
+        es, ps = [c.lower() for c in copied if "@" in c], [c for c in copied if "@" not in c and len(c)>=4]
         for i in range(min(len(es), len(ps))):
-            if is_valid_email(es[i]): 
-                results.append({"email": es[i], "password": ps[i], "status": "正常", "checked_at": now_cst(), "country": default_country})
-                
+            if is_valid_email(es[i]): results.append({"email": es[i], "password": ps[i], "status": "正常", "checked_at": now_cst(), "country": "美国"})
+            
+    logger.info(f"  idfree.top 提取到: {len(results)} 条")
+    return results
+
+def crawl_site(driver, url, site_name, country):
+    driver.get(url)
+    time.sleep(6) 
+    close_popups(driver)
+    scroll_to_bottom_deep(driver)
+    results = universal_extract(driver.page_source, country)
     logger.info(f"  {site_name} 提取到: {len(results)} 条")
     return results
 
@@ -162,7 +211,10 @@ def crawl_mid():
         for name, url, country in TARGET_SITES:
             logger.info(f"▶ 开始强拆: {name}")
             try:
-                pairs = crawl_universal(driver, url, name, country)
+                if name == "idfree.top":
+                    pairs = crawl_idfree_top(driver)
+                else:
+                    pairs = crawl_site(driver, url, name, country)
                 source_stats[name] = len(pairs)
                 for p in pairs:
                     e = p["email"]
@@ -176,4 +228,4 @@ def crawl_mid():
 if __name__ == "__main__":
     records, stats = crawl_mid()
     merge_and_save(records, stats, os.environ.get("OUTPUT_FILE", "apple_ids.json"))
-    logger.info(f"【中速组】完成，共抓取 {len(records)} 条")
+    logger.info(f"【中速组】全频段打击完成，共抓取 {len(records)} 条")
