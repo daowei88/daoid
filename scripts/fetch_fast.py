@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Apple ID 极速爬虫 (GitHub Actions 终极防丢版)
+Apple ID 极速爬虫 (GitHub Actions 终极版)
 专职负责纯静态直链，秒级执行。
 """
 
@@ -33,7 +33,6 @@ def fetch_html(url: str, timeout: int = 15) -> str:
     except Exception as e: return ""
 
 def crawl_iosapp() -> list:
-    """降维打击：直接请求后端隐藏的 TXT 文件"""
     results = []
     for i in range(1, 4):
         text = fetch_html(f"https://free.iosapp.icu/go-rod/{i}.txt")
