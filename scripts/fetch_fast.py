@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Apple ID 极速爬虫 (GitHub Actions 专版)
-只负责纯静态文档和接口，秒出结果。
+Apple ID 极速爬虫 (GitHub Actions 终极防丢版)
+负责最纯粹的静态站、博客和直链 txt。
 """
 
 import re, json, hashlib, logging, os
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 CST = timezone(timedelta(hours=8))
 
-# ⭐⭐⭐ 加强项：高匿伪装头，降低被微软 Azure 机房 IP 拦截的概率
+# 高匿伪装请求头
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -32,10 +32,10 @@ def fetch_html(url: str, timeout: int = 15) -> str:
         resp = requests.get(url, headers=HEADERS, timeout=timeout)
         resp.encoding = "utf-8"
         return resp.text if resp.status_code == 200 else ""
-    except Exception: return ""
+    except Exception as e: return ""
 
 def crawl_iosapp() -> list:
-    """⭐⭐⭐ 加强项：绕过网页前端，直接强行下载后端TXT文件，百发百中"""
+    """降维打击：直接请求后端隐藏的 TXT 文件"""
     results = []
     for i in range(1, 4):
         text = fetch_html(f"https://free.iosapp.icu/go-rod/{i}.txt")
@@ -46,10 +46,11 @@ def crawl_iosapp() -> list:
                 if "密码:" in line: pwd = line.split("密码:")[-1].strip()
             if is_valid_email(email) and pwd:
                 results.append({"email": email, "password": pwd, "status": "正常", "checked_at": now_cst(), "country": "美国"})
+    logger.info(f"  free.iosapp.icu 提取到: {len(results)} 条")
     return results
 
 def crawl_generic_text(url: str, site_name: str, default_country="美国") -> list:
-    """⭐⭐⭐ 你的原版逻辑升级：强大的正则，不管站长改成什么排版都能抠出账密"""
+    """终极文本透视：通杀所有博客排版"""
     html = fetch_html(url)
     text = BeautifulSoup(html, "lxml").get_text(" ", strip=True) if html else ""
     results, seen = [], set()
@@ -60,7 +61,6 @@ def crawl_generic_text(url: str, site_name: str, default_country="美国") -> li
         
         after_text = text[match.end():match.end()+150]
         pw = ""
-        # 兼容中文冒号、英文冒号、空格等各种千奇百怪的密码提示
         pw_match = re.search(r'(?:密码|Pass|Pw|Pwd)[:：\s]*([A-Za-z0-9!@#$%^&*()_+\-=\[\]{}]{6,32})', after_text, re.I)
         if pw_match: pw = pw_match.group(1)
         
@@ -77,7 +77,7 @@ def merge_and_save(fast_records: dict, source_stats: dict, output_path: str):
             with open(output_path, "r", encoding="utf-8") as f: old_data = json.load(f)
             for a in old_data.get("accounts", []):
                 src = a.get("source", "")
-                # ⭐⭐⭐ 你的救命稻草：如果 Actions 被墙导致本次抓取为 0，旧数据绝不删除，保住小火箭分类！
+                # 防丢失机制：如果被墙导致抓取为0，强行保留旧数据
                 if src in FAST_SOURCES and source_stats.get(src, 0) == 0:
                     merged[a["email"]] = a
                 elif src not in FAST_SOURCES:
